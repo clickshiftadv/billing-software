@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clickshift Bill Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root{--bg:#f1f3f8;--card:#fff;--ink:#14213d;--mute:#5d6678;--line:#d6dbe6;--brand:#1c3faa;--sky:#38b6ff;--red:#d71920}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 "Poppins","Noto Sans Devanagari",system-ui,sans-serif}
+.wrap{max-width:1280px;margin:0 auto;padding:16px;display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:1000px){.wrap{grid-template-columns:400px 1fr;align-items:start}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+.panel h3{margin:6px 0 0;font-size:14px;color:#fff;background:var(--brand);padding:6px 10px;border-radius:8px}
+label{display:grid;gap:3px;font-weight:600;font-size:12px;color:var(--mute)}
+input,textarea,select{font:inherit;color:var(--ink);background:#f7f8fc;border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:100%}
+textarea{resize:vertical;min-height:56px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.irow{display:grid;grid-template-columns:22px 1fr 54px 76px 30px;gap:6px;align-items:center}
+.irow span{font-weight:700;color:var(--brand);text-align:center}
+.irow button{border:0;background:#fde8e9;color:var(--red);border-radius:8px;height:34px;cursor:pointer;font-weight:700}
+.btn{border:0;border-radius:10px;padding:11px;font:inherit;font-weight:700;cursor:pointer;color:#fff;background:var(--brand)}
+.btn.alt{background:var(--red)}.btn.ghost{background:#e6ecfb;color:var(--brand)}
+.brandbar{font-size:20px;font-weight:700;color:var(--ink);padding:2px 2px 4px}.brandbar b{color:var(--red)}
+.log{font-size:12px;display:grid;gap:4px;max-height:180px;overflow:auto}.log div{background:#f1f4fb;border-radius:8px;padding:6px 8px}
+.ok{color:#0a7d33;font-weight:600}.er{color:var(--red);font-weight:600}
+.hint{font-size:11px;color:var(--mute);font-weight:400}
+.stage{overflow:auto}
+/* ---- BILL ---- */
+#bill{width:794px;min-height:1123px;background:#fff;color:#14213d;margin:0 auto;padding:40px 44px;position:relative;display:flex;flex-direction:column;box-shadow:0 2px 18px rgba(0,0,0,.12);font-size:13px}
+#bill:before{content:"";position:absolute;left:0;top:0;right:0;height:12px;background:linear-gradient(90deg,var(--brand) 0 55%,var(--sky) 55% 80%,var(--red) 80%)}
+.hd{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-top:8px}
+.ven{display:flex;gap:14px;align-items:flex-start}
+.ven img{max-width:110px;max-height:90px;object-fit:contain}
+.ven h1{margin:0;font-size:22px;color:var(--brand);line-height:1.2}
+.ven p{margin:3px 0 0;color:#444;white-space:pre-line}
+.inv{text-align:right}
+.inv h2{margin:0;font-size:28px;letter-spacing:2px;color:var(--red)}
+.inv table{margin-left:auto;margin-top:6px;border-collapse:collapse}
+.inv td{padding:2px 0 2px 12px}.inv td:first-child{color:#667;font-weight:600}
+.bt{display:grid;grid-template-columns:1fr auto;gap:18px;margin-top:22px;border:1px solid #d6dbe6;border-radius:10px;padding:14px;border-left:6px solid var(--sky)}
+.bt .lbl{font-size:11px;font-weight:700;color:var(--sky);letter-spacing:1px;text-transform:uppercase;filter:brightness(.8)}
+.bt h3{margin:2px 0 4px;font-size:17px}
+.bt p{margin:2px 0;color:#333;white-space:pre-line}
+.bt img{width:150px;height:100px;object-fit:cover;border:1px solid #cdd3e2;border-radius:6px}
+.items{width:100%;border-collapse:collapse;margin-top:22px}
+.items th{background:var(--brand);color:#fff;text-align:left;padding:8px 10px;font-size:12px}
+.items td{padding:9px 10px;border-bottom:1px solid #e3e7f0;vertical-align:top}
+.items .n{width:40px;text-align:center}.items .r,.items th.r{text-align:right}
+.items tr:nth-child(even) td{background:#f6f8fd}
+.tot{margin-left:auto;margin-top:14px;width:290px}
+.tot div{display:flex;justify-content:space-between;padding:5px 10px}
+.tot .g{background:var(--brand);color:#fff;font-weight:700;font-size:16px;border-radius:8px;margin-top:4px;padding:9px 10px}
+.tot .due{color:var(--red);font-weight:700}
+.words{margin-top:10px;font-style:italic;color:#445}
+.bot{margin-top:auto;padding-top:26px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px}
+.bot .nt{white-space:pre-line;color:#555;font-size:12px;max-width:430px}
+.sig{text-align:center;min-width:170px}.sig i{display:block;border-top:1px solid #444;margin-top:44px;padding-top:4px;font-style:normal;font-weight:600}
+.ty{text-align:center;margin-top:16px;color:var(--brand);font-weight:700}
+@media print{
+ body{background:#fff}.wrap{display:block;padding:0;max-width:none}.panel{display:none}
+ .stage{overflow:visible}#bill{box-shadow:none;margin:0;width:210mm;min-height:297mm}
+ @page{size:A4;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="panel">
+ <div class="brandbar"><b>Clickshift</b> Bill Generator</div>
+ <h3>1. बिल की जानकारी</h3>
+ <div class="row">
+  <label>Bill / Invoice No.<input id="no" value="001"></label>
+  <label>Date<input type="date" id="date"></label>
+ </div>
+ <label>Bill Title<select id="ttl"><option>INVOICE</option><option>बिल / BILL</option><option>CASH MEMO</option><option>RECEIPT</option><option>QUOTATION</option></select></label>
+
+ <h3>2. FROM – वेंडर (जो सर्विस/सामान दे रहा है)</h3>
+ <label>Vendor / Business Name<input id="vn" value="Clickshift"></label>
+ <label>Address<textarea id="va">Shop No., Street, City, State - PIN</textarea></label>
+ <div class="row">
+  <label>Contact No.<input id="vp" value="+91 98765 43210"></label>
+  <label>Email<input id="ve"></label>
+ </div>
+ <label>GSTIN / PAN / Reg. No. (optional)<input id="vg"></label>
+ <label>Vendor Logo<input type="file" id="vl" accept="image/*"></label>
+ <label>Logo size<input type="range" id="ls" min="50" max="200" value="100"></label>
+ <label style="grid-template-columns:auto 1fr;align-items:center;gap:8px"><input type="checkbox" id="sv" style="width:auto" checked><span class="hint">Vendor details इस browser में याद रखें (अगली बार दोबारा नहीं भरना पड़ेगा)</span></label>
+
+ <h3>3. TO – ग्राहक (जिसको सर्विस दे रहे हैं)</h3>
+ <label>Customer Name<input id="cn"></label>
+ <label>Mobile No.<input id="cp"></label>
+ <label>Customer Email<input id="ce" type="email" placeholder="customer@gmail.com"></label>
+ <label>Address<textarea id="ca"></textarea></label>
+ <div class="row">
+  <label>ID Card Type<select id="it"><option value="">— कोई नहीं —</option><option>Aadhaar</option><option>PAN</option><option>Voter ID</option><option>Driving Licence</option><option>Passport</option><option>Other</option></select></label>
+  <label>ID Card No.<input id="in"></label>
+ </div>
+ <label>ID Card / Customer Photo (optional)<input type="file" id="ci" accept="image/*"></label>
+
+ <h3>4. Items – 1, 2, 3, 4…</h3>
+ <div id="rows" style="display:grid;gap:6px"></div>
+ <button class="btn ghost" id="add" type="button">+ नई लाइन जोड़ें</button>
+ <div class="hint">Description · Qty · Rate (₹). नंबर अपने आप 1, 2, 3… लगते हैं।</div>
+
+ <h3>5. Total</h3>
+ <div class="row">
+  <label>Discount (₹)<input type="number" id="dc" value="0" min="0"></label>
+  <label>Tax / GST (%)<input type="number" id="tx" value="0" min="0" step="0.01"></label>
+ </div>
+ <label>Advance / Paid (₹)<input type="number" id="ad" value="0" min="0"></label>
+ <label>Notes / Terms<textarea id="nt">Thank you for your business.</textarea></label>
+ <h3>6. Email – Gmail से भेजें</h3>
+ <div class="hint">बिल PDF के साथ वेंडर (From email) और ग्राहक (To email) दोनों को आपके Gmail से जाएगा। Sent copy आपके Gmail के Sent folder में रिकॉर्ड रहेगी।</div>
+ <label>Google OAuth Client ID<input id="gid" placeholder="xxxx.apps.googleusercontent.com"></label>
+ <label>अपने लिए BCC copy (optional)<input id="bcc" type="email" placeholder="records@clickshift.in"></label>
+ <button class="btn ghost" id="gcon" type="button">Gmail Connect करें</button>
+ <div id="gst" class="hint">Gmail connected नहीं है।</div>
+ <button class="btn" id="send" type="button" style="background:#0a7d33">दोनों को Email भेजें</button>
+ <button class="btn ghost" id="gcomp" type="button">Gmail Compose खोलें (बिना setup)</button>
+ <div class="hint"><b>भेजे गए बिल (Record)</b> <a href="#" id="csv">CSV download</a></div>
+ <div class="log" id="log"></div>
+
+ <button class="btn" id="pdf" type="button">Print / Save as PDF</button>
+ <button class="btn alt" id="png" type="button">Download PNG</button>
+ <button class="btn ghost" id="rst" type="button">नया बिल (ग्राहक व items साफ़ करें)</button>
+</div>
+
+<div class="stage"><div id="bill"></div></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let vlogo='',cimg='';
+let items=[{d:'Item / Service 1',q:1,r:0},{d:'',q:1,r:0},{d:'',q:1,r:0},{d:'',q:1,r:0}];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const inr=n=>'₹ '+(+n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+function words(n){
+ n=Math.round(n);if(!n)return 'Zero';
+ const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+ const t=x=>x<20?a[x]:b[Math.floor(x/10)]+(x%10?' '+a[x%10]:'');
+ const h=x=>(x>99?a[Math.floor(x/100)]+' Hundred'+(x%100?' ':''):'')+(x%100?t(x%100):'');
+ let o='';const cr=Math.floor(n/1e7);n%=1e7;const lk=Math.floor(n/1e5);n%=1e5;const th=Math.floor(n/1e3);n%=1e3;
+ if(cr)o+=h(cr)+' Crore ';if(lk)o+=h(lk)+' Lakh ';if(th)o+=h(th)+' Thousand ';if(n)o+=h(n);
+ return o.trim();
+}
+function rows(){
+ $('rows').innerHTML='';
+ items.forEach((it,i)=>{
+  const d=document.createElement('div');d.className='irow';
+  d.innerHTML='<span>'+(i+1)+'</span><input placeholder="Description" value="'+esc(it.d)+'"><input type="number" min="0" step="any" value="'+it.q+'" title="Qty"><input type="number" min="0" step="any" value="'+it.r+'" title="Rate ₹"><button type="button" title="हटाएँ">×</button>';
+  const [,x,q,r,bt]=d.children;
+  x.oninput=()=>{it.d=x.value;draw()};q.oninput=()=>{it.q=q.value;draw()};r.oninput=()=>{it.r=r.value;draw()};
+  bt.onclick=()=>{items.splice(i,1);rows();draw()};
+  $('rows').appendChild(d);
+ });
+}
+function draw(){
+ const sub=items.reduce((s,i)=>s+(+i.q||0)*(+i.r||0),0),dc=Math.min(+$('dc').value||0,sub),tx=(sub-dc)*(+$('tx').value||0)/100,tot=sub-dc+tx,ad=+$('ad').value||0,due=tot-ad;
+ const d=$('date').value?new Date($('date').value).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
+ const shown=items.filter(i=>i.d.trim()||(+i.r||0)>0);
+ const idl=($('it').value||$('in').value)?'<p><b>ID:</b> '+esc($('it').value)+(($('it').value&&$('in').value)?' – ':'')+esc($('in').value)+'</p>':'';
+ $('bill').innerHTML=
+ '<div class="hd"><div class="ven">'+(vlogo?'<img src="'+vlogo+'" style="width:'+$('ls').value+'px">':'')+'<div><h1>'+esc($('vn').value)+'</h1><p>'+esc($('va').value)+'</p>'+
+ ($('vp').value?'<p><b>Ph:</b> '+esc($('vp').value)+'</p>':'')+($('ve').value?'<p><b>Email:</b> '+esc($('ve').value)+'</p>':'')+($('vg').value?'<p><b>GSTIN/Reg:</b> '+esc($('vg').value)+'</p>':'')+'</div></div>'+
+ '<div class="inv"><h2>'+esc($('ttl').value)+'</h2><table><tr><td>No.</td><td><b>'+esc($('no').value)+'</b></td></tr><tr><td>Date</td><td><b>'+esc(d)+'</b></td></tr></table></div></div>'+
+ '<div class="bt"><div><div class="lbl">Bill To</div><h3>'+esc($('cn').value||'—')+'</h3>'+($('cp').value?'<p><b>Mobile:</b> '+esc($('cp').value)+'</p>':'')+($('ce').value?'<p><b>Email:</b> '+esc($('ce').value)+'</p>':'')+($('ca').value?'<p>'+esc($('ca').value)+'</p>':'')+idl+'</div>'+(cimg?'<img src="'+cimg+'">':'')+'</div>'+
+ '<table class="items"><thead><tr><th class="n">#</th><th>Description</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount</th></tr></thead><tbody>'+
+ shown.map((i,k)=>'<tr><td class="n">'+(k+1)+'</td><td>'+esc(i.d)+'</td><td class="r">'+(+i.q||0)+'</td><td class="r">'+inr(i.r)+'</td><td class="r">'+inr((+i.q||0)*(+i.r||0))+'</td></tr>').join('')+'</tbody></table>'+
+ '<div class="tot"><div><span>Subtotal</span><span>'+inr(sub)+'</span></div>'+(dc?'<div><span>Discount</span><span>− '+inr(dc)+'</span></div>':'')+(tx?'<div><span>Tax ('+(+$('tx').value)+'%)</span><span>'+inr(tx)+'</span></div>':'')+
+ '<div class="g"><span>TOTAL</span><span>'+inr(tot)+'</span></div>'+(ad?'<div><span>Paid / Advance</span><span>− '+inr(ad)+'</span></div><div class="due"><span>Balance Due</span><span>'+inr(due)+'</span></div>':'')+'</div>'+
+ '<div class="words">Amount in words: <b>Rupees '+words(tot)+' Only</b></div>'+
+ '<div class="bot"><div class="nt">'+esc($('nt').value)+'</div><div class="sig"><i>Authorised Signature</i></div></div>';
+ save();
+}
+function save(){
+ try{if($('sv').checked)localStorage.setItem('billVendor',JSON.stringify({vn:$('vn').value,va:$('va').value,vp:$('vp').value,ve:$('ve').value,vg:$('vg').value,vlogo,ls:$('ls').value}));else localStorage.removeItem('billVendor')}catch(e){}
+}
+function load(){
+ try{const v=JSON.parse(localStorage.getItem('billVendor')||'null');if(v){['vn','va','vp','ve','vg','ls'].forEach(k=>$(k).value=v[k]||'');vlogo=v.vlogo||''}}catch(e){}
+ try{const n=localStorage.getItem('billNo');if(n)$('no').value=n}catch(e){}
+}
+function readImg(inp,cb){const f=inp.files[0];if(!f){cb('');return}const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f)}
+$('vl').onchange=e=>readImg(e.target,u=>{vlogo=u;draw()});
+$('ci').onchange=e=>readImg(e.target,u=>{cimg=u;draw()});
+['ce','no','date','ttl','vn','va','vp','ve','vg','ls','cn','cp','ca','it','in','dc','tx','ad','nt','sv'].forEach(id=>$(id).addEventListener('input',draw));
+$('add').onclick=()=>{items.push({d:'',q:1,r:0});rows();draw()};
+$('date').value=new Date().toISOString().slice(0,10);
+$('pdf').onclick=()=>{document.title='Bill-'+$('no').value+'-'+($('cn').value||'customer');window.print()};
+$('png').onclick=()=>{
+ if(!window.html2canvas){alert('PNG के लिए internet चाहिए. Print / Save as PDF उपयोग करें.');return}
+ html2canvas($('bill'),{scale:2,backgroundColor:'#fff'}).then(c=>c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='bill-'+$('no').value+'.png';document.body.appendChild(a);a.click();a.remove()}));
+};
+$('rst').onclick=()=>{
+ const n=parseInt($('no').value);try{if(!isNaN(n))localStorage.setItem('billNo',String(n+1).padStart($('no').value.length,'0'))}catch(e){}
+ ['cn','cp','ca','in','ci'].forEach(k=>$(k).value='');$('it').value='';cimg='';$('dc').value=0;$('ad').value=0;
+ items=[{d:'',q:1,r:0},{d:'',q:1,r:0},{d:'',q:1,r:0},{d:'',q:1,r:0}];
+ try{$('no').value=localStorage.getItem('billNo')||$('no').value}catch(e){}
+ rows();draw();
+};
+
+/* ---------- Gmail ---------- */
+let tok='',tc=null;
+const st=(m,c)=>{$('gst').className=c||'hint';$('gst').textContent=m};
+try{$('gid').value=localStorage.getItem('csGid')||'';$('bcc').value=localStorage.getItem('csBcc')||''}catch(e){}
+$('gid').oninput=()=>{try{localStorage.setItem('csGid',$('gid').value.trim())}catch(e){}tc=null;tok=''};
+$('bcc').oninput=()=>{try{localStorage.setItem('csBcc',$('bcc').value.trim())}catch(e){}};
+function auth(cb){
+ if(tok){cb();return}
+ const id=$('gid').value.trim();
+ if(!id){st('पहले Google OAuth Client ID डालें (नीचे देखें: setup steps)','er');return}
+ if(!window.google||!google.accounts){st('Google script load नहीं हुई — internet / https page check करें','er');return}
+ if(location.protocol==='file:'){st('Gmail connect के लिए यह file https वेबसाइट पर होस्ट होनी चाहिए (file:// पर Google login नहीं चलता)','er');return}
+ tc=google.accounts.oauth2.initTokenClient({client_id:id,scope:'https://www.googleapis.com/auth/gmail.send',callback:async r=>{
+  if(r.error){st('Connect failed: '+r.error,'er');return}
+  tok=r.access_token;
+  try{const p=await (await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile',{headers:{Authorization:'Bearer '+tok}})).json();st('Connected'+(p.emailAddress?': '+p.emailAddress:''),'ok')}catch(e){st('Connected','ok')}
+  if(cb)cb();
+ }});
+ tc.requestAccessToken({prompt:''});
+}
+$('gcon').onclick=()=>{tok='';auth(()=>{})};
+const b64=s=>btoa(unescape(encodeURIComponent(s)));
+const b64u=s=>s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const wrap=s=>s.replace(/(.{76})/g,'$1\r\n');
+const mails=v=>(v||'').split(/[,;\s]+/).filter(x=>/@/.test(x));
+function summary(){
+ const sub=items.reduce((a,i)=>a+(+i.q||0)*(+i.r||0),0),dc=Math.min(+$('dc').value||0,sub),tot=sub-dc+(sub-dc)*(+$('tx').value||0)/100;
+ return {tot,due:tot-(+$('ad').value||0)};
+}
+async function makePdf(){
+ const el=$('bill'),c=await html2canvas(el,{scale:2,backgroundColor:'#fff'});
+ const {jsPDF}=window.jspdf,pdf=new jsPDF('p','mm','a4');
+ let w=210,h=210*c.height/c.width;if(h>297){h=297;w=297*c.width/c.height}
+ pdf.addImage(c.toDataURL('image/jpeg',.92),'JPEG',(210-w)/2,0,w,h);
+ return pdf.output('datauristring').split(',')[1];
+}
+function logAdd(rec){
+ let a=[];try{a=JSON.parse(localStorage.getItem('csLog')||'[]')}catch(e){}
+ a.unshift(rec);try{localStorage.setItem('csLog',JSON.stringify(a.slice(0,500)))}catch(e){}showLog();
+}
+function showLog(){
+ let a=[];try{a=JSON.parse(localStorage.getItem('csLog')||'[]')}catch(e){}
+ $('log').innerHTML=a.length?a.slice(0,30).map(x=>'<div><b>#'+esc(x.no)+'</b> · '+esc(x.cust)+' · '+inr(x.tot)+'<br><span class="hint">'+esc(x.at)+' → '+esc(x.to)+'</span></div>').join(''):'<span class="hint">अभी कोई बिल नहीं भेजा गया।</span>';
+}
+$('csv').onclick=e=>{e.preventDefault();let a=[];try{a=JSON.parse(localStorage.getItem('csLog')||'[]')}catch(x){}
+ const q=v=>'"'+String(v).replace(/"/g,'""')+'"',t='Bill No,Date,Customer,Mobile,Total,Balance Due,Sent To,Sent At\n'+a.map(x=>[x.no,x.date,x.cust,x.mob,x.tot,x.due,x.to,x.at].map(q).join(',')).join('\n');
+ const l=document.createElement('a');l.href=URL.createObjectURL(new Blob(['﻿'+t],{type:'text/csv'}));l.download='clickshift-bill-records.csv';document.body.appendChild(l);l.click();l.remove()};
+$('send').onclick=()=>{
+ const to=[...mails($('ve').value),...mails($('ce').value)];
+ if(!mails($('ve').value).length||!mails($('ce').value).length){st('Vendor Email (From section) और Customer Email (To section) दोनों भरें','er');return}
+ auth(async()=>{
+  try{
+   st('PDF बन रही है…');
+   const pdf=await makePdf(),sm=summary(),sub='Bill #'+$('no').value+' – '+($('vn').value||'Clickshift'),
+    body='Namaste,\r\n\r\nBill #'+$('no').value+' ('+$('vn').value+' → '+($('cn').value||'Customer')+')\r\nTotal: Rs. '+sm.tot.toFixed(2)+'\r\nBalance Due: Rs. '+sm.due.toFixed(2)+'\r\n\r\nBill PDF attached.\r\n\r\nThank you,\r\n'+$('vn').value+'\r\n'+$('vp').value,
+    bd='cs'+Date.now(),bcc=mails($('bcc').value);
+   const raw=['To: '+to.join(', ')].concat(bcc.length?['Bcc: '+bcc.join(', ')]:[],[
+    'Subject: =?UTF-8?B?'+b64(sub)+'?=','MIME-Version: 1.0','Content-Type: multipart/mixed; boundary="'+bd+'"','',
+    '--'+bd,'Content-Type: text/plain; charset="UTF-8"','Content-Transfer-Encoding: base64','',wrap(b64(body)),
+    '--'+bd,'Content-Type: application/pdf; name="Bill-'+$('no').value+'.pdf"','Content-Transfer-Encoding: base64','Content-Disposition: attachment; filename="Bill-'+$('no').value+'.pdf"','',wrap(pdf),'--'+bd+'--']).join('\r\n');
+   st('भेज रहे हैं…');
+   const rs=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify({raw:b64u(b64(raw))})});
+   if(rs.status===401){tok='';throw new Error('Session expire — फिर से Connect करें')}
+   if(!rs.ok)throw new Error((await rs.text()).slice(0,140));
+   st('Email भेज दिया गया: '+to.join(', '),'ok');
+   logAdd({no:$('no').value,date:$('date').value,cust:$('cn').value,mob:$('cp').value,tot:sm.tot,due:sm.due,to:to.join(', '),at:new Date().toLocaleString('en-IN')});
+  }catch(e){st('Error: '+e.message,'er')}
+ });
+};
+$('gcomp').onclick=()=>{
+ const to=[...mails($('ve').value),...mails($('ce').value)],sm=summary();
+ const u='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(to.join(','))+(mails($('bcc').value).length?'&bcc='+encodeURIComponent(mails($('bcc').value).join(','))
+  :'')+'&su='+encodeURIComponent('Bill #'+$('no').value+' – '+$('vn').value)+'&body='+encodeURIComponent('Bill #'+$('no').value+'\nTotal: Rs. '+sm.tot.toFixed(2)+'\nBalance Due: Rs. '+sm.due.toFixed(2)+'\n\n(PDF attach karein — "Print / Save as PDF" se banayi hui file)');
+ window.open(u,'_blank');
+};
+showLog();
+load();rows();draw();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
+</script>
+</body>
+</html>
